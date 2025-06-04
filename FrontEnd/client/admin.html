@@ -1,97 +1,229 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Site Admin - Quản Lý Đơn Hàng</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Quản Lý Đơn Hàng</title>
     <style>
-        .card {
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
-        .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f0f2f5;
+            color: #333;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
-        tbody tr {
-            transition: background-color 0.2s ease;
+
+        h1 {
+            color: #1a73e8;
+            margin-bottom: 20px;
+            text-align: center;
         }
-        tbody tr:hover {
-            background-color: #e5f3ff;
+
+        .container {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            max-width: 800px;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #1a73e8;
+            color: white;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        tr:hover {
+            background-color: #e8f0fe;
+        }
+
+        .summary {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+            gap: 20px;
+        }
+
+        .summary div {
+            background-color: #e8f0fe;
+            padding: 15px;
+            border-radius: 5px;
+            flex: 1;
+            text-align: center;
+        }
+
+        .pagination {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        button {
+            padding: 12px;
+            background-color: #1a73e8;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #1557b0;
+        }
+
+        .action-button {
+            padding: 8px 12px;
+            font-size: 14px;
+            background-color: #28a745;
+        }
+
+        .action-button:hover {
+            background-color: #218838;
+        }
+
+        .action-button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 15px;
+            }
+            .summary {
+                flex-direction: column;
+            }
         }
     </style>
 </head>
-<body class="bg-gray-100 font-sans">
-    <div class="container mx-auto p-6">
-        <h1 class="text-3xl font-bold text-center text-gray-800 mb-8">Quản Lý Đơn Hàng</h1>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            <div class="card bg-white rounded-lg p-6 shadow-lg">
-                <h3 class="text-xl font-semibold text-blue-600 mb-4">Tồn Kho</h3>
-                <p class="text-2xl text-gray-700">Sản Phẩm A: <span id="inventory" class="font-bold">100</span> đơn vị</p>
+<body>
+    <h1>Quản Lý Đơn Hàng</h1>
+    <div class="container">
+        <div class="summary">
+            <div>
+                <h2>Tồn Kho</h2>
+                <p>Sản Phẩm A: <span id="inventory">1000</span> đơn vị</p>
             </div>
-            <div class="card bg-white rounded-lg p-6 shadow-lg">
-                <h3 class="text-xl font-semibold text-blue-600 mb-4">Tổng Doanh Thu</h3>
-                <p class="text-2xl text-gray-700"><span id="totalSales" class="font-bold">0</span> VND</p>
+            <div>
+                <h2>Tổng Doanh Thu</h2>
+                <p><span id="totalSales">0</span> VND</p>
             </div>
         </div>
-        <h2 class="text-2xl font-semibold text-gray-800 mb-4">Danh Sách Đơn Hàng</h2>
-        <div class="bg-white rounded-lg shadow-lg overflow-hidden">
-            <table class="min-w-full">
-                <thead class="bg-blue-600 text-white">
-                    <tr>
-                        <th class="py-3 px-4 text-left">Mã Đơn Hàng</th>
-                        <th class="py-3 px-4 text-left">Sản Phẩm</th>
-                        <th class="py-3 px-4 text-left">Số Lượng</th>
-                        <th class="py-3 px-4 text-left">Giá</th>
-                        <th class="py-3 px-4 text-left">Thời Gian</th>
-                    </tr>
-                </thead>
-                <tbody id="orderList" class="text-gray-700"></tbody>
-            </table>
-        </div>
-        <div class="mt-4 flex justify-end">
-            <button class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Trang trước</button>
-            <button class="ml-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Trang sau</button>
+        <h2>Danh Sách Đơn Hàng</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Mã Đơn Hàng</th>
+                    <th>Sản Phẩm</th>
+                    <th>Số Lượng</th>
+                    <th>Giá</th>
+                    <th>Thời Gian</th>
+                    <th>Hành động</th>
+                </tr>
+            </thead>
+            <tbody id="orderTable">
+            </tbody>
+        </table>
+        <div class="pagination">
+            <button onclick="changePage(-1)">Trang trước</button>
+            <button onclick="changePage(1)">Trang sau</button>
         </div>
     </div>
     <script>
-        let inventory = 100;
-        let totalSales = 0;
-        const orders = [];
+        let currentPage = 0;
+        const ordersPerPage = 10;
+        let orders = [];
 
-        function updateDashboard(order) {
-            if (order) {
-                orders.push(order);
-                inventory -= order.quantity;
-                totalSales += order.price;
-            }
-            const orderList = document.getElementById("orderList");
-            orderList.innerHTML = "";
-            orders.forEach(order => {
-                const row = document.createElement("tr");
-                row.className = "border-b";
-                row.innerHTML = `
-                    <td class="py-3 px-4">${order.orderId}</td>
-                    <td class="py-3 px-4">${order.product}</td>
-                    <td class="py-3 px-4">${order.quantity}</td>
-                    <td class="py-3 px-4">${order.price.toLocaleString()} VND</td>
-                    <td class="py-3 px-4">${new Date(order.timestamp).toLocaleString()}</td>
-                `;
-                orderList.appendChild(row);
-            });
-            document.getElementById("inventory").textContent = inventory;
-            document.getElementById("totalSales").textContent = totalSales.toLocaleString();
-        }
-
-        // Kết nối WebSocket để nhận đơn hàng mới
         const ws = new WebSocket('ws://localhost:3000');
         ws.onmessage = (event) => {
-            const order = JSON.parse(event.data);
-            updateDashboard(order);
+            const message = JSON.parse(event.data);
+            if (message.type === 'alert') {
+                alert(message.data.message);
+            } else {
+                // Kiểm tra dữ liệu đơn hàng
+                if (!message.id || !message.product || !message.quantity || !message.price || !message.time) {
+                    console.error('Dữ liệu đơn hàng không hợp lệ:', message);
+                    return;
+                }
+                orders.unshift(message);
+                updateTable();
+                updateSummary();
+            }
         };
-        ws.onopen = () => console.log('WebSocket connected');
-        ws.onerror = (error) => console.error('WebSocket error:', error);
-        ws.onclose = () => console.log('WebSocket disconnected');
+
+        function updateSummary() {
+            const inventory = 100 - orders.reduce((sum, order) => sum + (parseInt(order.quantity) || 0), 0);
+            const totalSales = orders.reduce((sum, order) => sum + (parseInt(order.price) || 0), 0);
+            document.getElementById('inventory').textContent = isNaN(inventory) ? '0' : inventory;
+            document.getElementById('totalSales').textContent = isNaN(totalSales) ? '0' : totalSales;
+        }
+
+        function updateTable() {
+            const start = currentPage * ordersPerPage;
+            const end = start + ordersPerPage;
+            const paginatedOrders = orders.slice(start, end);
+            const tbody = document.getElementById('orderTable');
+            tbody.innerHTML = '';
+            paginatedOrders.forEach(order => {
+                const row = document.createElement('tr');
+                const orderTime = new Date(order.time);
+                row.innerHTML = `
+                    <td>${order.id || 'Không xác định'}</td>
+                    <td>${order.product || 'Không xác định'}</td>
+                    <td>${parseInt(order.quantity) || 0}</td>
+                    <td>${parseInt(order.price) || 0}</td>
+                    <td>${orderTime instanceof Date && !isNaN(orderTime) ? orderTime.toLocaleString() : 'Không xác định'}</td>
+                    <td>
+                        <button class="action-button" onclick="confirmOrder('${order.id}')" id="confirm-${order.id}">Xác nhận</button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function confirmOrder(orderId) {
+            const confirmButton = document.getElementById(`confirm-${orderId}`);
+            confirmButton.disabled = true;
+            confirmButton.textContent = 'Đã xác nhận';
+            ws.send(JSON.stringify({ type: 'confirm', orderId: orderId }));
+        }
+
+        function changePage(direction) {
+            const maxPage = Math.ceil(orders.length / ordersPerPage) - 1;
+            currentPage = Math.max(0, Math.min(currentPage + direction, maxPage));
+            updateTable();
+        }
     </script>
 </body>
 </html>
