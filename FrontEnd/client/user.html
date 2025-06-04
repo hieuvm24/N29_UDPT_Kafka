@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Site User - Đặt Hàng</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background-color: #f0f0f0;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        button:active {
+            background-color: #1e7e34;
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center h-screen">
+    <div class="text-center">
+        <h1 class="text-3xl font-bold text-gray-800 mb-6">Đặt Hàng</h1>
+        <button onclick="placeOrder()" class="px-6 py-3 text-lg bg-green-500 text-white rounded-lg shadow hover:bg-green-600 active:bg-green-700">Đặt Hàng Ngay</button>
+    </div>
+    <script>
+        async function placeOrder() {
+            const order = {
+                orderId: Math.floor(Math.random() * 1000000),
+                product: "Sản Phẩm A",
+                quantity: 1,
+                price: 100000,
+                timestamp: new Date().toISOString()
+            };
+            try {
+                const response = await fetch('http://localhost:3000/place-order', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(order)
+                });
+                if (response.ok) {
+                    alert(`Đơn hàng #${order.orderId} đã được gửi!`);
+                } else {
+                    alert('Lỗi khi gửi đơn hàng!');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Lỗi kết nối server!');
+            }
+        }
+    </script>
+</body>
+</html>

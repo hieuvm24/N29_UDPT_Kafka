@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Site Admin - Quản Lý Đơn Hàng</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+        }
+        tbody tr {
+            transition: background-color 0.2s ease;
+        }
+        tbody tr:hover {
+            background-color: #e5f3ff;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans">
+    <div class="container mx-auto p-6">
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-8">Quản Lý Đơn Hàng</h1>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <div class="card bg-white rounded-lg p-6 shadow-lg">
+                <h3 class="text-xl font-semibold text-blue-600 mb-4">Tồn Kho</h3>
+                <p class="text-2xl text-gray-700">Sản Phẩm A: <span id="inventory" class="font-bold">100</span> đơn vị</p>
+            </div>
+            <div class="card bg-white rounded-lg p-6 shadow-lg">
+                <h3 class="text-xl font-semibold text-blue-600 mb-4">Tổng Doanh Thu</h3>
+                <p class="text-2xl text-gray-700"><span id="totalSales" class="font-bold">0</span> VND</p>
+            </div>
+        </div>
+        <h2 class="text-2xl font-semibold text-gray-800 mb-4">Danh Sách Đơn Hàng</h2>
+        <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+            <table class="min-w-full">
+                <thead class="bg-blue-600 text-white">
+                    <tr>
+                        <th class="py-3 px-4 text-left">Mã Đơn Hàng</th>
+                        <th class="py-3 px-4 text-left">Sản Phẩm</th>
+                        <th class="py-3 px-4 text-left">Số Lượng</th>
+                        <th class="py-3 px-4 text-left">Giá</th>
+                        <th class="py-3 px-4 text-left">Thời Gian</th>
+                    </tr>
+                </thead>
+                <tbody id="orderList" class="text-gray-700"></tbody>
+            </table>
+        </div>
+        <div class="mt-4 flex justify-end">
+            <button class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Trang trước</button>
+            <button class="ml-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Trang sau</button>
+        </div>
+    </div>
+    <script>
+        let inventory = 100;
+        let totalSales = 0;
+        const orders = [];
+
+        function updateDashboard(order) {
+            if (order) {
+                orders.push(order);
+                inventory -= order.quantity;
+                totalSales += order.price;
+            }
+            const orderList = document.getElementById("orderList");
+            orderList.innerHTML = "";
+            orders.forEach(order => {
+                const row = document.createElement("tr");
+                row.className = "border-b";
+                row.innerHTML = `
+                    <td class="py-3 px-4">${order.orderId}</td>
+                    <td class="py-3 px-4">${order.product}</td>
+                    <td class="py-3 px-4">${order.quantity}</td>
+                    <td class="py-3 px-4">${order.price.toLocaleString()} VND</td>
+                    <td class="py-3 px-4">${new Date(order.timestamp).toLocaleString()}</td>
+                `;
+                orderList.appendChild(row);
+            });
+            document.getElementById("inventory").textContent = inventory;
+            document.getElementById("totalSales").textContent = totalSales.toLocaleString();
+        }
+
+        // Kết nối WebSocket để nhận đơn hàng mới
+        const ws = new WebSocket('ws://localhost:3000');
+        ws.onmessage = (event) => {
+            const order = JSON.parse(event.data);
+            updateDashboard(order);
+        };
+        ws.onopen = () => console.log('WebSocket connected');
+        ws.onerror = (error) => console.error('WebSocket error:', error);
+        ws.onclose = () => console.log('WebSocket disconnected');
+    </script>
+</body>
+</html>
