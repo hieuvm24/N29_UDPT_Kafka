@@ -319,7 +319,6 @@
         let orders = [];
         const initialInventory = 100; // Align with initial display
 
-
         let currentSortKey = '';
         let currentSortAsc = true;
 
@@ -351,6 +350,7 @@
 
             updateTable();
         }
+
         function showNotification(message, type = 'success') {
             const container = document.getElementById('notificationContainer');
             if (!container) {
@@ -361,7 +361,6 @@
             notification.className = `notification ${type}`;
             notification.textContent = message;
             container.prepend(notification); // Add to top for stacking
-            // Remove notification after animation completes (0.3s slide-in + 2.4s display + 0.3s fade-out)
             setTimeout(() => {
                 notification.remove();
             }, 3000);
@@ -375,16 +374,37 @@
         ws.onmessage = (event) => {
             try {
                 const message = JSON.parse(event.data);
-                if (message.type === 'alert') {
+                if (message.type === 'init') {
+                    // Khởi tạo dữ liệu từ server khi kết nối
+                    orders = message.data.orders || [];
+                    document.getElementById('inventory').textContent = message.data.inventory || initialInventory;
+                    document.getElementById('totalSales').textContent = (message.data.totalSales || 0).toLocaleString('vi-VN');
+                    updateTable();
+                } else if (message.type === 'alert') {
                     showNotification(message.data?.message || 'Thông báo không xác định', 'error');
                 } else if (message.type === 'confirm') {
                     showNotification(`Xác nhận đơn hàng ${message.orderId} ${message.success ? 'thành công' : 'thất bại: ' + (message.error || 'Lỗi không xác định')}`, message.success ? 'success' : 'error');
+                    if (message.success) {
+                        const order = orders.find(o => o.id == message.orderId);
+                        if (order) {
+                            order.confirmed = true;
+                            updateTable();
+                        }
+                    }
+                } else if (message.type === 'confirmation') {
+                    const order = orders.find(o => o.id == message.data.orderId);
+                    if (order) {
+                        order.confirmed = true;
+                        updateTable();
+                    }
                 } else if (message.id && message.product && message.quantity && message.price && message.time) {
-                    message.confirmed = false;
-                    orders.unshift(message);
-                    updateTable();
-                    updateSummary();
-                    showNotification(`Đơn hàng mới ${message.id} đã được nhận!`, 'success');
+                    if (!orders.find(o => o.id === message.id)) { // Tránh trùng lặp
+                        message.confirmed = message.confirmed || false;
+                        orders.unshift(message);
+                        updateTable();
+                        updateSummary();
+                        showNotification(`Đơn hàng mới ${message.id} đã được nhận!`, 'success');
+                    }
                 }
             } catch (error) {
                 console.error('Lỗi phân tích WebSocket message:', error);
@@ -440,7 +460,7 @@
         }
 
         function confirmOrder(orderId) {
-            const order = orders.find(o => o.id === Number(orderId));
+            const order = orders.find(o => o.id == orderId);
             if (!order) {
                 showNotification(`Không tìm thấy đơn hàng ${orderId}`, 'error');
                 return;
@@ -460,7 +480,6 @@
             showNotification(`Đơn hàng ${orderId} đã được xác nhận!`, 'success');
             updateTable();
         }
-
 
         function changePage(direction) {
             const maxPage = Math.ceil(orders.length / ordersPerPage) - 1;

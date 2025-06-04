@@ -294,7 +294,8 @@
                     showNotification('Đặt hàng thành công!', 'success');
                     document.getElementById('orderForm').reset();
                 } else {
-                    showNotification('Lỗi khi đặt hàng', 'error');
+                    const errorText = await response.text();
+                    showNotification(errorText || 'Lỗi khi đặt hàng', 'error');
                 }
             } catch (error) {
                 console.error('Lỗi:', error);
@@ -308,25 +309,25 @@
         const ws = new WebSocket('ws://localhost:3000');
         ws.onopen = () => {
             showNotification('Kết nối đến máy chủ thành công!', 'success');
-            ws.onmessage = (event) => {
-                try {
-                    const message = JSON.parse(event.data);
-                    if (message.type === 'confirmation') {
-                        showNotification(`Đơn hàng ${message.data.orderId} đã được xác nhận!`, 'success');
-                    } else if (message.type === 'alert') {
-                        showNotification(message.data?.message || 'Thông báo không xác định', 'error');
-                    }
-                } catch (error) {
-                    console.error('Lỗi phân tích WebSocket message:', error);
-                    showNotification('Lỗi xử lý thông báo từ máy chủ', 'error');
+        };
+        ws.onmessage = (event) => {
+            try {
+                const message = JSON.parse(event.data);
+                if (message.type === 'confirmation') {
+                    showNotification(`Đơn hàng ${message.data.orderId} đã được xác nhận!`, 'success');
+                } else if (message.type === 'alert') {
+                    showNotification(message.data?.message || 'Thông báo không xác định', 'error');
                 }
-            };
-            ws.onerror = () => {
-                showNotification('Lỗi kết nối đến máy chủ', 'error');
-            };
-            ws.onclose = () => {
-                showNotification('Kết nối máy chủ đã đóng', 'error');
-            };
+            } catch (error) {
+                console.error('Lỗi phân tích WebSocket message:', error);
+                showNotification('Lỗi xử lý thông báo từ máy chủ', 'error');
+            }
+        };
+        ws.onerror = () => {
+            showNotification('Lỗi kết nối đến máy chủ', 'error');
+        };
+        ws.onclose = () => {
+            showNotification('Kết nối máy chủ đã đóng', 'error');
         };
     </script>
 </body>
