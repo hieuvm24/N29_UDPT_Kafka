@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Độ Trễ Đơn Hàng</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #e0eafc 0%, #cfdef3 100%);
+            color: #2d3748;
+            padding: 30px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            color: #2b6cb0;
+            margin-bottom: 30px;
+            font-size: 2.5rem;
+            font-weight: 700;
+            text-align: center;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .container {
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+            margin-bottom: 30px;
+            transition: transform 0.3s ease;
+        }
+
+        .container:hover {
+            transform: translateY(-5px);
+        }
+
+        .test-section {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            align-items: center;
+        }
+
+        button {
+            padding: 14px 24px;
+            background: linear-gradient(90deg, #38a169 0%, #48bb78 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        button:hover:not(:disabled) {
+            background: linear-gradient(90deg, #2f855a 0%, #38a169 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        button:disabled {
+            background: #e2e8f0;
+            color: #a0aec0;
+            cursor: not-allowed;
+        }
+
+        button::before {
+            content: '⚡';
+            font-size: 1.2rem;
+        }
+
+        #results {
+            margin-top: 30px;
+            background-color: #f7fafc;
+            border-radius: 8px;
+            padding: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-size: 0.9rem;
+            color: #4a5568;
+            border: 1px solid #e2e8f0;
+            white-space: pre-wrap;
+            width: 100%;
+        }
+
+        .metrics {
+            margin-top: 20px;
+            padding: 15px;
+            background: linear-gradient(135deg, #edf2ff 0%, #dbe9ff 100%);
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .metrics p {
+            font-size: 1rem;
+            color: #2d3748;
+            margin-bottom: 10px;
+        }
+
+        .metrics p strong {
+            color: #1a4971;
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 15px;
+            }
+
+            .container {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            button {
+                padding: 12px 20px;
+                font-size: 1rem;
+            }
+
+            #results {
+                font-size: 0.85rem;
+                max-height: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Test Độ Trễ Đơn Hàng</h1>
+    <div class="container">
+        <div class="test-section">
+            <button id="startTest" onclick="simulateOrders(1000)">Bắt Đầu Test 1,000 Đơn</button>
+            <div id="results"></div>
+            <div id="metrics" class="metrics"></div>
+        </div>
+    </div>
+    <script>
+        let orderId = parseInt(localStorage.getItem('orderId')) || 0;
+        const startTimes = new Map();
+        const latencies = [];
+
+        async function simulateOrders(count) {
+            const startTestButton = document.getElementById('startTest');
+            const results = document.getElementById('results');
+            const metrics = document.getElementById('metrics');
+            startTestButton.disabled = true;
+            results.textContent = `Đang gửi ${count} đơn hàng...\n`;
+            metrics.innerHTML = '';
+
+            latencies.length = 0; // Clear previous latencies
+            startTimes.clear(); // Clear previous start times
+
+            for (let i = 0; i < count; i++) {
+                orderId++;
+                localStorage.setItem('orderId', orderId);
+                const order = {
+                    id: orderId.toString(),
+                    product: 'Sản Phẩm A',
+                    quantity: Math.floor(Math.random() * 10) + 1,
+                    price: Math.floor(Math.random() * 100000) + 10000,
+                    time: new Date().toISOString()
+                };
+                startTimes.set(order.id, performance.now());
+                try {
+                    const response = await fetch('http://localhost:3001/place-order', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(order)
+                    });
+                    if (!response.ok) {
+                        results.textContent += `Lỗi gửi đơn ${order.id}\n`;
+                    }
+                } catch (error) {
+                    console.error(`Lỗi gửi đơn ${order.id}:`, error);
+                    results.textContent += `Lỗi gửi đơn ${order.id}: ${error.message}\n`;
+                }
+                // Add 10ms delay to avoid server overload
+                await new Promise(resolve => setTimeout(resolve, 10));
+            }
+            results.textContent += `Đã gửi ${count} đơn hàng. Đang chờ hiển thị trên trang admin...\n`;
+        }
+
+        function calculateMetrics() {
+            if (latencies.length === 0) return;
+            const avg = latencies.reduce((sum, val) => sum + val, 0) / latencies.length;
+            const sorted = [...latencies].sort((a, b) => a - b);
+            const p50 = sorted[Math.floor(latencies.length / 2)];
+            const p99 = sorted[Math.floor(latencies.length * 0.99)];
+            const metrics = document.getElementById('metrics');
+            metrics.innerHTML = `
+                <p><strong>Độ trễ trung bình:</strong> ${avg.toFixed(2)}ms</p>
+                <p><strong>Độ trễ p50 (trung vị):</strong> ${p50.toFixed(2)}ms</p>
+                <p><strong>Độ trễ p99:</strong> ${p99.toFixed(2)}ms</p>
+                <p><strong>Tổng đơn hoàn thành:</strong> ${latencies.length}</p>
+            `;
+        }
+
+        const ws = new WebSocket('ws://localhost:3000');
+        ws.onmessage = (event) => {
+            const message = JSON.parse(event.data);
+            if (message.type !== 'alert' && message.id) {
+                const endTime = performance.now();
+                const startTime = startTimes.get(message.id);
+                if (startTime) {
+                    const latency = endTime - startTime;
+                    latencies.push(latency);
+                    const results = document.getElementById('results');
+                    results.textContent += `Đơn ${message.id}: ${latency.toFixed(2)}ms\n`;
+                    results.scrollTop = results.scrollHeight; // Auto-scroll to bottom
+                    console.log(`Order ${message.id} displayed with latency ${latency.toFixed(2)}ms`);
+                    if (latencies.length === 1000) {
+                        calculateMetrics();
+                        document.getElementById('startTest').disabled = false;
+                    }
+                }
+            }
+        };
+        ws.onerror = () => {
+            document.getElementById('results').textContent += 'Lỗi kết nối WebSocket.\n';
+        };
+    </script>
+</body>
+</html>

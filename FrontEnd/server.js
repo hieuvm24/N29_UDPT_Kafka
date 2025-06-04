@@ -24,7 +24,6 @@ const wss = new WebSocketServer({ port: 3000 });
 
 app.post('/place-order', async (req, res) => {
     const order = req.body;
-    // Kiểm tra dữ liệu đơn hàng trước khi gửi
     if (!order.id || !order.product || !order.quantity || !order.price || !order.time) {
         return res.status(400).send('Dữ liệu đơn hàng không hợp lệ');
     }
@@ -67,12 +66,10 @@ setTimeout(async () => {
         await consumer.run({
             eachMessage: async ({ topic, partition, message }) => {
                 const order = JSON.parse(message.value.toString());
-                // Kiểm tra dữ liệu đơn hàng
                 if (!order.id || !order.product || !order.quantity || !order.price || !order.time) {
                     console.error('Dữ liệu đơn hàng không hợp lệ:', order);
                     return;
                 }
-                // Đảm bảo quantity và price là số
                 order.quantity = parseInt(order.quantity) || 0;
                 order.price = parseInt(order.price) || 0;
                 if (order.product === 'Sản Phẩm A') {
@@ -84,7 +81,6 @@ setTimeout(async () => {
                         client.send(JSON.stringify(order));
                     }
                 });
-                // Gửi cảnh báo tồn kho nếu dưới 20
                 if (inventory < 20) {
                     await producer.send({
                         topic: 'inventory-alerts',

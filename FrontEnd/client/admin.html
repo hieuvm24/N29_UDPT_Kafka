@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -57,7 +58,8 @@
             overflow: hidden;
         }
 
-        th, td {
+        th,
+        td {
             padding: 15px;
             text-align: left;
             border-bottom: 1px solid #e2e8f0;
@@ -177,6 +179,66 @@
             font-style: italic;
         }
 
+        /* Notification styles */
+        .notification-container {
+            position: fixed;
+            top: 50%;
+            left: 20px;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 1000;
+            max-width: 300px;
+            width: 100%;
+        }
+
+        .notification {
+            background: linear-gradient(90deg, #38a169 0%, #48bb78 100%);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            font-size: 0.95rem;
+            font-weight: 500;
+            opacity: 0;
+            transform: translateX(-20px);
+            animation: slide-in 0.3s ease-out forwards, fade-out 0.3s ease-in-out 2.7s forwards;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .notification.error {
+            background: linear-gradient(90deg, #e53e3e 0%, #f56565 100%);
+        }
+
+        .notification::before {
+            font-size: 1.2rem;
+        }
+
+        .notification.success::before {
+            content: '✅';
+        }
+
+        .notification.error::before {
+            content: '❌';
+        }
+
+        @keyframes slide-in {
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes fade-out {
+            to {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+        }
+
         @media (max-width: 600px) {
             body {
                 padding: 15px;
@@ -190,7 +252,8 @@
                 font-size: 2rem;
             }
 
-            th, td {
+            th,
+            td {
                 padding: 10px;
                 font-size: 0.9rem;
             }
@@ -198,9 +261,20 @@
             button {
                 padding: 10px 20px;
             }
+
+            .notification-container {
+                left: 10px;
+                max-width: 90vw;
+            }
+
+            .notification {
+                font-size: 0.9rem;
+                padding: 12px 15px;
+            }
         }
     </style>
 </head>
+
 <body>
     <h1>Quản Lý Đơn Hàng</h1>
     <div class="container">
@@ -218,16 +292,19 @@
         <table>
             <thead>
                 <tr>
-                    <th>Mã Đơn Hàng</th>
-                    <th>Sản Phẩm</th>
-                    <th>Số Lượng</th>
-                    <th>Giá</th>
-                    <th>Thời Gian</th>
+                    <th onclick="sortTableBy('id')">Mã Đơn Hàng</th>
+                    <th onclick="sortTableBy('product')">Sản Phẩm</th>
+                    <th onclick="sortTableBy('quantity')">Số Lượng</th>
+                    <th onclick="sortTableBy('price')">Giá</th>
+                    <th onclick="sortTableBy('time')">Thời Gian</th>
                     <th>Hành động</th>
                 </tr>
             </thead>
+
             <tbody id="orderTable">
-                <tr><td colspan="6" class="loading">Đang tải đơn hàng...</td></tr>
+                <tr>
+                    <td colspan="6" class="loading">Đang tải đơn hàng...</td>
+                </tr>
             </tbody>
         </table>
         <div class="pagination">
@@ -235,39 +312,101 @@
             <button onclick="changePage(1)">Trang sau ►</button>
         </div>
     </div>
+    <div class="notification-container" id="notificationContainer"></div>
     <script>
         let currentPage = 0;
         const ordersPerPage = 10;
         let orders = [];
+        const initialInventory = 100; // Align with initial display
+
+
+        let currentSortKey = '';
+        let currentSortAsc = true;
+
+        function sortTableBy(key) {
+            if (currentSortKey === key) {
+                currentSortAsc = !currentSortAsc; // Đảo chiều sắp xếp
+            } else {
+                currentSortKey = key;
+                currentSortAsc = true;
+            }
+
+            orders.sort((a, b) => {
+                let valA = a[key];
+                let valB = b[key];
+
+                if (key === 'time') {
+                    valA = new Date(valA);
+                    valB = new Date(valB);
+                }
+
+                if (typeof valA === 'number' && typeof valB === 'number') {
+                    return currentSortAsc ? valA - valB : valB - valA;
+                }
+
+                return currentSortAsc
+                    ? String(valA).localeCompare(String(valB))
+                    : String(valB).localeCompare(String(valA));
+            });
+
+            updateTable();
+        }
+        function showNotification(message, type = 'success') {
+            const container = document.getElementById('notificationContainer');
+            if (!container) {
+                console.error('Notification container not found');
+                return;
+            }
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            container.prepend(notification); // Add to top for stacking
+            // Remove notification after animation completes (0.3s slide-in + 2.4s display + 0.3s fade-out)
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
 
         const ws = new WebSocket('ws://localhost:3000');
         ws.onopen = () => {
             document.getElementById('orderTable').innerHTML = '<tr><td colspan="6" class="loading">Đã kết nối, đang chờ đơn hàng...</td></tr>';
+            showNotification('Kết nối đến máy chủ thành công!', 'success');
         };
         ws.onmessage = (event) => {
-            const message = JSON.parse(event.data);
-            if (message.type === 'alert') {
-                alert(message.data.message);
-            } else {
-                if (!message.id || !message.product || !message.quantity || !message.price || !message.time) {
-                    console.error('Dữ liệu đơn hàng không hợp lệ:', message);
-                    return;
+            try {
+                const message = JSON.parse(event.data);
+                if (message.type === 'alert') {
+                    showNotification(message.data?.message || 'Thông báo không xác định', 'error');
+                } else if (message.type === 'confirm') {
+                    showNotification(`Xác nhận đơn hàng ${message.orderId} ${message.success ? 'thành công' : 'thất bại: ' + (message.error || 'Lỗi không xác định')}`, message.success ? 'success' : 'error');
+                } else if (message.id && message.product && message.quantity && message.price && message.time) {
+                    message.confirmed = false;
+                    orders.unshift(message);
+                    updateTable();
+                    updateSummary();
+                    showNotification(`Đơn hàng mới ${message.id} đã được nhận!`, 'success');
                 }
-                message.confirmed = false;
-                orders.unshift(message);
-                updateTable();
-                updateSummary();
+            } catch (error) {
+                console.error('Lỗi phân tích WebSocket message:', error);
+                showNotification('Lỗi xử lý thông báo từ máy chủ', 'error');
             }
         };
         ws.onerror = () => {
             document.getElementById('orderTable').innerHTML = '<tr><td colspan="6" class="loading">Lỗi kết nối đến máy chủ.</td></tr>';
+            showNotification('Lỗi kết nối đến máy chủ', 'error');
+        };
+        ws.onclose = () => {
+            showNotification('Kết nối máy chủ đã đóng', 'error');
         };
 
         function updateSummary() {
-            const inventory = 100 - orders.reduce((sum, order) => sum + (parseInt(order.quantity) || 0), 0);
+            const inventory = initialInventory - orders.reduce((sum, order) => sum + (parseInt(order.quantity) || 0), 0);
             const totalSales = orders.reduce((sum, order) => sum + (parseInt(order.price) || 0), 0);
-            document.getElementById('inventory').textContent = isNaN(inventory) ? '0' : inventory;
+            document.getElementById('inventory').textContent = isNaN(inventory) ? '0' : Math.max(0, inventory);
             document.getElementById('totalSales').textContent = isNaN(totalSales) ? '0' : totalSales.toLocaleString('vi-VN');
+            if (inventory < 0) {
+                showNotification('Cảnh báo: Tồn kho âm!', 'error');
+            }
         }
 
         function updateTable() {
@@ -301,15 +440,27 @@
         }
 
         function confirmOrder(orderId) {
-            const order = orders.find(o => o.id === orderId);
-            if (order) {
-                order.confirmed = true;
-                const confirmButton = document.getElementById(`confirm-${orderId}`);
+            const order = orders.find(o => o.id === Number(orderId));
+            if (!order) {
+                showNotification(`Không tìm thấy đơn hàng ${orderId}`, 'error');
+                return;
+            }
+            if (order.confirmed) {
+                showNotification(`Đơn hàng ${orderId} đã được xác nhận`, 'error');
+                return;
+            }
+
+            order.confirmed = true;
+            const confirmButton = document.getElementById(`confirm-${orderId}`);
+            if (confirmButton) {
                 confirmButton.disabled = true;
                 confirmButton.textContent = 'Đã xác nhận';
-                ws.send(JSON.stringify({ type: 'confirm', orderId: orderId }));
             }
+            ws.send(JSON.stringify({ type: 'confirm', orderId: orderId }));
+            showNotification(`Đơn hàng ${orderId} đã được xác nhận!`, 'success');
+            updateTable();
         }
+
 
         function changePage(direction) {
             const maxPage = Math.ceil(orders.length / ordersPerPage) - 1;
@@ -318,4 +469,5 @@
         }
     </script>
 </body>
+
 </html>

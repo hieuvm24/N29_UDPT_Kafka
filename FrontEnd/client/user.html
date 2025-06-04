@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -129,6 +130,66 @@
             margin-top: 10px;
         }
 
+        /* Notification styles */
+        .notification-container {
+            position: fixed;
+            top: 50%;
+            left: 20px;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 1000;
+            max-width: 300px;
+            width: 100%;
+        }
+
+        .notification {
+            background: linear-gradient(90deg, #38a169 0%, #48bb78 100%);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            font-size: 0.95rem;
+            font-weight: 500;
+            opacity: 0;
+            transform: translateX(-20px);
+            animation: slide-in 0.3s ease-out forwards, fade-out 0.3s ease-in-out 2.7s forwards;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .notification.error {
+            background: linear-gradient(90deg, #e53e3e 0%, #f56565 100%);
+        }
+
+        .notification::before {
+            font-size: 1.2rem;
+        }
+
+        .notification.success::before {
+            content: '✅';
+        }
+
+        .notification.error::before {
+            content: '❌';
+        }
+
+        @keyframes slide-in {
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes fade-out {
+            to {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+        }
+
         @media (max-width: 600px) {
             body {
                 padding: 15px;
@@ -146,9 +207,20 @@
                 padding: 12px;
                 font-size: 1rem;
             }
+
+            .notification-container {
+                left: 10px;
+                max-width: 90vw;
+            }
+
+            .notification {
+                font-size: 0.9rem;
+                padding: 12px 15px;
+            }
         }
     </style>
 </head>
+
 <body>
     <h1>Đặt Hàng</h1>
     <div class="container">
@@ -162,40 +234,56 @@
             <button type="submit" id="submitButton">Đặt Hàng Ngay</button>
         </form>
     </div>
+    <div class="notification-container" id="notificationContainer"></div>
     <script>
-        let lastOrderId = null;
+        let orderCounter = 0;
+
+        function showNotification(message, type = 'success') {
+            const container = document.getElementById('notificationContainer');
+            if (!container) {
+                console.error('Notification container not found');
+                return;
+            }
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            container.prepend(notification); // Add to top for stacking
+            setTimeout(() => {
+                notification.remove();
+            }, 3000); // Matches animation duration (0.3s slide-in + 2.4s display + 0.3s fade-out)
+        }
 
         document.getElementById('orderForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const submitButton = document.getElementById('submitButton');
             submitButton.disabled = true;
             submitButton.classList.add('loading');
-            
+
             const quantity = parseInt(document.getElementById('quantity').value);
             const [product, price] = document.getElementById('product').value.split(',');
-            
+
             if (isNaN(quantity) || quantity < 1) {
-                alert('Số lượng không hợp lệ. Vui lòng nhập số lớn hơn 0.');
+                showNotification('Số lượng không hợp lệ. Vui lòng nhập số lớn hơn 0.', 'error');
                 submitButton.disabled = false;
                 submitButton.classList.remove('loading');
                 return;
             }
             if (!product || isNaN(parseInt(price))) {
-                alert('Sản phẩm không hợp lệ.');
+                showNotification('Sản phẩm không hợp lệ.', 'error');
                 submitButton.disabled = false;
                 submitButton.classList.remove('loading');
                 return;
             }
-            
+            orderCounter++;
             const order = {
-                id: Date.now().toString(),
+                id: orderCounter,
                 product: product,
+                confirmed: false,
                 quantity: quantity,
                 price: parseInt(price) * quantity,
                 time: new Date().toISOString()
             };
-            lastOrderId = order.id;
-            
+
             try {
                 const response = await fetch('http://localhost:3001/place-order', {
                     method: 'POST',
@@ -203,14 +291,14 @@
                     body: JSON.stringify(order)
                 });
                 if (response.ok) {
-                    alert('Đặt hàng thành công!');
+                    showNotification('Đặt hàng thành công!', 'success');
                     document.getElementById('orderForm').reset();
                 } else {
-                    alert('Lỗi khi đặt hàng');
+                    showNotification('Lỗi khi đặt hàng', 'error');
                 }
             } catch (error) {
                 console.error('Lỗi:', error);
-                alert('Lỗi khi đặt hàng');
+                showNotification('Lỗi khi đặt hàng', 'error');
             } finally {
                 submitButton.disabled = false;
                 submitButton.classList.remove('loading');
@@ -218,11 +306,27 @@
         });
 
         const ws = new WebSocket('ws://localhost:3000');
-        ws.onmessage = (event) => {
-            const message = JSON.parse(event.data);
-            if (message.type === 'confirmation' && message.data.orderId === lastOrderId) {
-                alert(`Đơn hàng ${message.data.orderId} đã được xác nhận!`);
-            }
+        ws.onopen = () => {
+            showNotification('Kết nối đến máy chủ thành công!', 'success');
+            ws.onmessage = (event) => {
+                try {
+                    const message = JSON.parse(event.data);
+                    if (message.type === 'confirmation') {
+                        showNotification(`Đơn hàng ${message.data.orderId} đã được xác nhận!`, 'success');
+                    } else if (message.type === 'alert') {
+                        showNotification(message.data?.message || 'Thông báo không xác định', 'error');
+                    }
+                } catch (error) {
+                    console.error('Lỗi phân tích WebSocket message:', error);
+                    showNotification('Lỗi xử lý thông báo từ máy chủ', 'error');
+                }
+            };
+            ws.onerror = () => {
+                showNotification('Lỗi kết nối đến máy chủ', 'error');
+            };
+            ws.onclose = () => {
+                showNotification('Kết nối máy chủ đã đóng', 'error');
+            };
         };
     </script>
 </body>
