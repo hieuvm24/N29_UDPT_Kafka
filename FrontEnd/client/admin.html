@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quản Lý Đơn Hàng</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
 
         * {
             margin: 0;
@@ -14,10 +14,10 @@
         }
 
         body {
-            font-family: 'Roboto', sans-serif;
-            background-color: #f0f2f5;
-            color: #333;
-            padding: 20px;
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #e0eafc 0%, #cfdef3 100%);
+            color: #2d3748;
+            padding: 30px;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
@@ -25,104 +25,178 @@
         }
 
         h1 {
-            color: #1a73e8;
-            margin-bottom: 20px;
+            color: #2b6cb0;
+            margin-bottom: 30px;
+            font-size: 2.5rem;
+            font-weight: 700;
             text-align: center;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
 
         .container {
             background-color: white;
-            border-radius: 10px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            padding: 30px;
-            max-width: 800px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+            padding: 40px;
+            max-width: 900px;
             width: 100%;
-            margin-bottom: 20px;
+            margin-bottom: 30px;
+            transition: transform 0.3s ease;
+        }
+
+        .container:hover {
+            transform: translateY(-5px);
         }
 
         table {
             width: 100%;
-            border-collapse: collapse;
+            border-collapse: separate;
+            border-spacing: 0;
             margin-top: 20px;
+            border-radius: 8px;
+            overflow: hidden;
         }
 
         th, td {
-            padding: 12px;
+            padding: 15px;
             text-align: left;
-            border-bottom: 1px solid #ddd;
+            border-bottom: 1px solid #e2e8f0;
         }
 
         th {
-            background-color: #1a73e8;
+            background: linear-gradient(90deg, #2b6cb0 0%, #3182ce 100%);
             color: white;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
         }
 
-        tr:nth-child(even) {
-            background-color: #f9f9f9;
+        td {
+            background-color: white;
         }
 
-        tr:hover {
-            background-color: #e8f0fe;
+        tr:nth-child(even) td {
+            background-color: #f7fafc;
+        }
+
+        tr:hover td {
+            background-color: #ebf4ff;
+            transition: background-color 0.2s ease;
         }
 
         .summary {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 20px;
+            margin-top: 20px;
         }
 
         .summary div {
-            background-color: #e8f0fe;
-            padding: 15px;
-            border-radius: 5px;
-            flex: 1;
+            background: linear-gradient(135deg, #edf2ff 0%, #dbe9ff 100%);
+            padding: 20px;
+            border-radius: 8px;
             text-align: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .summary div:hover {
+            transform: scale(1.05);
+        }
+
+        .summary h2 {
+            font-size: 1.2rem;
+            color: #2d3748;
+            margin-bottom: 10px;
+        }
+
+        .summary p {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #1a4971;
         }
 
         .pagination {
-            margin-top: 20px;
+            margin-top: 30px;
             display: flex;
-            gap: 10px;
+            gap: 15px;
             justify-content: center;
         }
 
         button {
-            padding: 12px;
-            background-color: #1a73e8;
+            padding: 12px 24px;
+            background: linear-gradient(90deg, #2b6cb0 0%, #3182ce 100%);
             color: white;
             border: none;
-            border-radius: 5px;
-            font-size: 16px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
             cursor: pointer;
-            transition: background-color 0.3s;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
-        button:hover {
-            background-color: #1557b0;
+        button:hover:not(:disabled) {
+            background: linear-gradient(90deg, #2c5282 0%, #2b6cb0 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
         }
 
         .action-button {
-            padding: 8px 12px;
-            font-size: 14px;
-            background-color: #28a745;
+            padding: 8px 16px;
+            font-size: 0.9rem;
+            background: linear-gradient(90deg, #38a169 0%, #48bb78 100%);
         }
 
-        .action-button:hover {
-            background-color: #218838;
+        .action-button:hover:not(:disabled) {
+            background: linear-gradient(90deg, #2f855a 0%, #38a169 100%);
         }
 
         .action-button:disabled {
-            background-color: #cccccc;
+            background: #e2e8f0;
+            color: #a0aec0;
             cursor: not-allowed;
         }
 
+        .action-button::before {
+            content: '✔';
+            display: inline-block;
+            font-size: 1rem;
+        }
+
+        .action-button:disabled::before {
+            content: '✓';
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #718096;
+            font-style: italic;
+        }
+
         @media (max-width: 600px) {
-            .container {
+            body {
                 padding: 15px;
             }
-            .summary {
-                flex-direction: column;
+
+            .container {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            th, td {
+                padding: 10px;
+                font-size: 0.9rem;
+            }
+
+            button {
+                padding: 10px 20px;
             }
         }
     </style>
@@ -133,7 +207,7 @@
         <div class="summary">
             <div>
                 <h2>Tồn Kho</h2>
-                <p>Sản Phẩm A: <span id="inventory">1000</span> đơn vị</p>
+                <p>Sản Phẩm A: <span id="inventory">100</span> đơn vị</p>
             </div>
             <div>
                 <h2>Tổng Doanh Thu</h2>
@@ -153,11 +227,12 @@
                 </tr>
             </thead>
             <tbody id="orderTable">
+                <tr><td colspan="6" class="loading">Đang tải đơn hàng...</td></tr>
             </tbody>
         </table>
         <div class="pagination">
-            <button onclick="changePage(-1)">Trang trước</button>
-            <button onclick="changePage(1)">Trang sau</button>
+            <button onclick="changePage(-1)">◄ Trang trước</button>
+            <button onclick="changePage(1)">Trang sau ►</button>
         </div>
     </div>
     <script>
@@ -166,27 +241,33 @@
         let orders = [];
 
         const ws = new WebSocket('ws://localhost:3000');
+        ws.onopen = () => {
+            document.getElementById('orderTable').innerHTML = '<tr><td colspan="6" class="loading">Đã kết nối, đang chờ đơn hàng...</td></tr>';
+        };
         ws.onmessage = (event) => {
             const message = JSON.parse(event.data);
             if (message.type === 'alert') {
                 alert(message.data.message);
             } else {
-                // Kiểm tra dữ liệu đơn hàng
                 if (!message.id || !message.product || !message.quantity || !message.price || !message.time) {
                     console.error('Dữ liệu đơn hàng không hợp lệ:', message);
                     return;
                 }
+                message.confirmed = false;
                 orders.unshift(message);
                 updateTable();
                 updateSummary();
             }
+        };
+        ws.onerror = () => {
+            document.getElementById('orderTable').innerHTML = '<tr><td colspan="6" class="loading">Lỗi kết nối đến máy chủ.</td></tr>';
         };
 
         function updateSummary() {
             const inventory = 100 - orders.reduce((sum, order) => sum + (parseInt(order.quantity) || 0), 0);
             const totalSales = orders.reduce((sum, order) => sum + (parseInt(order.price) || 0), 0);
             document.getElementById('inventory').textContent = isNaN(inventory) ? '0' : inventory;
-            document.getElementById('totalSales').textContent = isNaN(totalSales) ? '0' : totalSales;
+            document.getElementById('totalSales').textContent = isNaN(totalSales) ? '0' : totalSales.toLocaleString('vi-VN');
         }
 
         function updateTable() {
@@ -195,17 +276,24 @@
             const paginatedOrders = orders.slice(start, end);
             const tbody = document.getElementById('orderTable');
             tbody.innerHTML = '';
+            if (paginatedOrders.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="loading">Không có đơn hàng nào.</td></tr>';
+                return;
+            }
             paginatedOrders.forEach(order => {
                 const row = document.createElement('tr');
                 const orderTime = new Date(order.time);
+                const isConfirmed = order.confirmed || false;
                 row.innerHTML = `
                     <td>${order.id || 'Không xác định'}</td>
                     <td>${order.product || 'Không xác định'}</td>
                     <td>${parseInt(order.quantity) || 0}</td>
                     <td>${parseInt(order.price) || 0}</td>
-                    <td>${orderTime instanceof Date && !isNaN(orderTime) ? orderTime.toLocaleString() : 'Không xác định'}</td>
+                    <td>${orderTime instanceof Date && !isNaN(orderTime) ? orderTime.toLocaleString('vi-VN') : 'Không xác định'}</td>
                     <td>
-                        <button class="action-button" onclick="confirmOrder('${order.id}')" id="confirm-${order.id}">Xác nhận</button>
+                        <button class="action-button" onclick="confirmOrder('${order.id}')" id="confirm-${order.id}" ${isConfirmed ? 'disabled' : ''}>
+                            ${isConfirmed ? 'Đã xác nhận' : 'Xác nhận'}
+                        </button>
                     </td>
                 `;
                 tbody.appendChild(row);
@@ -213,10 +301,14 @@
         }
 
         function confirmOrder(orderId) {
-            const confirmButton = document.getElementById(`confirm-${orderId}`);
-            confirmButton.disabled = true;
-            confirmButton.textContent = 'Đã xác nhận';
-            ws.send(JSON.stringify({ type: 'confirm', orderId: orderId }));
+            const order = orders.find(o => o.id === orderId);
+            if (order) {
+                order.confirmed = true;
+                const confirmButton = document.getElementById(`confirm-${orderId}`);
+                confirmButton.disabled = true;
+                confirmButton.textContent = 'Đã xác nhận';
+                ws.send(JSON.stringify({ type: 'confirm', orderId: orderId }));
+            }
         }
 
         function changePage(direction) {

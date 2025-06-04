@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Đặt Hàng</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
 
         * {
             margin: 0;
@@ -14,78 +14,137 @@
         }
 
         body {
-            font-family: 'Roboto', sans-serif;
-            background-color: #f0f2f5;
-            color: #333;
-            padding: 20px;
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #e0eafc 0%, #cfdef3 100%);
+            color: #2d3748;
+            padding: 30px;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
         }
 
- spider {
-            color: #1a73e8;
-            margin-bottom: 20px;
+        h1 {
+            color: #2b6cb0;
+            margin-bottom: 30px;
+            font-size: 2.5rem;
+            font-weight: 700;
             text-align: center;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
 
         .container {
             background-color: white;
-            border-radius: 10px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            padding: 30px;
-            max-width: 800px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+            padding: 40px;
+            max-width: 500px;
             width: 100%;
-            margin-bottom: 20px;
+            margin-bottom: 30px;
+            transition: transform 0.3s ease;
+        }
+
+        .container:hover {
+            transform: translateY(-5px);
         }
 
         form {
             display: flex;
             flex-direction: column;
-            gap: 15px;
+            gap: 20px;
         }
 
         label {
-            font-weight: bold;
-            margin-bottom: 5px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            color: #2d3748;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        label::before {
+            content: '📋';
+            font-size: 1.2rem;
         }
 
         select,
         input[type="number"] {
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            font-size: 16px;
-            transition: border-color 0.3s;
+            padding: 12px 16px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
             width: 100%;
+            background-color: #f7fafc;
         }
 
         select:focus,
         input[type="number"]:focus {
             outline: none;
-            border-color: #1a73e8;
-            box-shadow: 0 0 5px rgba(26, 115, 232, 0.3);
+            border-color: #2b6cb0;
+            box-shadow: 0 0 8px rgba(43, 108, 176, 0.3);
+            background-color: white;
         }
 
         button {
-            padding: 12px;
-            background-color: #1a73e8;
+            padding: 14px;
+            background: linear-gradient(90deg, #2b6cb0 0%, #3182ce 100%);
             color: white;
             border: none;
-            border-radius: 5px;
-            font-size: 16px;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
             cursor: pointer;
-            transition: background-color 0.3s;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
         }
 
-        button:hover {
-            background-color: #1557b0;
+        button:hover:not(:disabled) {
+            background: linear-gradient(90deg, #2c5282 0%, #2b6cb0 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        button:disabled {
+            background: #e2e8f0;
+            color: #a0aec0;
+            cursor: not-allowed;
+        }
+
+        button::before {
+            content: '🛒';
+            font-size: 1.2rem;
+        }
+
+        .loading::after {
+            content: 'Đang xử lý...';
+            display: block;
+            font-style: italic;
+            color: #718096;
+            margin-top: 10px;
         }
 
         @media (max-width: 600px) {
-            .container {
+            body {
                 padding: 15px;
+            }
+
+            .container {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            button {
+                padding: 12px;
+                font-size: 1rem;
             }
         }
     </style>
@@ -94,13 +153,13 @@
     <h1>Đặt Hàng</h1>
     <div class="container">
         <form id="orderForm">
-            <label for="product">Sản Phẩm:</label>
+            <label for="product">Sản Phẩm</label>
             <select id="product" name="product" required>
                 <option value="Sản Phẩm A,100000">Sản Phẩm A (100,000 VND)</option>
             </select>
-            <label for="quantity">Số Lượng:</label>
+            <label for="quantity">Số Lượng</label>
             <input type="number" id="quantity" name="quantity" min="1" required>
-            <button type="submit">Đặt Hàng Ngay</button>
+            <button type="submit" id="submitButton">Đặt Hàng Ngay</button>
         </form>
     </div>
     <script>
@@ -108,17 +167,26 @@
 
         document.getElementById('orderForm').addEventListener('submit', async (e) => {
             e.preventDefault();
+            const submitButton = document.getElementById('submitButton');
+            submitButton.disabled = true;
+            submitButton.classList.add('loading');
+            
             const quantity = parseInt(document.getElementById('quantity').value);
             const [product, price] = document.getElementById('product').value.split(',');
-            // Kiểm tra dữ liệu
+            
             if (isNaN(quantity) || quantity < 1) {
                 alert('Số lượng không hợp lệ. Vui lòng nhập số lớn hơn 0.');
+                submitButton.disabled = false;
+                submitButton.classList.remove('loading');
                 return;
             }
             if (!product || isNaN(parseInt(price))) {
                 alert('Sản phẩm không hợp lệ.');
+                submitButton.disabled = false;
+                submitButton.classList.remove('loading');
                 return;
             }
+            
             const order = {
                 id: Date.now().toString(),
                 product: product,
@@ -127,6 +195,7 @@
                 time: new Date().toISOString()
             };
             lastOrderId = order.id;
+            
             try {
                 const response = await fetch('http://localhost:3001/place-order', {
                     method: 'POST',
@@ -142,6 +211,9 @@
             } catch (error) {
                 console.error('Lỗi:', error);
                 alert('Lỗi khi đặt hàng');
+            } finally {
+                submitButton.disabled = false;
+                submitButton.classList.remove('loading');
             }
         });
 
